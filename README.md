@@ -1,5 +1,11 @@
 # NfcBusServer
 
+## Initialisation
+
+```shell
+npm install
+```
+
 ## Lancement
 
 ```shell
