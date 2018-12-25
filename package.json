@@ -1,0 +1,19 @@
+{
+  "name": "nfc_bus_api",
+  "version": "1.0.0",
+  "description": "Effectuer les traitements de l'app mobile",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon server.js"
+  },
+  "author": "Geoffrey ROMAN",
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^1.18.9"
+  },
+  "dependencies": {
+    "express": "^4.16.4",
+    "mysql": "^2.16.0"
+  }
+}
