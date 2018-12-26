@@ -47,23 +47,80 @@ con.connect(function(err) {
   }
 });
 
-// var hostname = "localhost";
-// var port = 3000;
+var hostname = "localhost";
+var port = 3000;
 
-// // Nous créons un objet de type Express.
-// var app = express();
+// Nous créons un objet de type Express.
+var app = express();
 
-// //Afin de faciliter le routage (les URL que nous souhaitons prendre en charge dans notre API), nous créons un objet Router.
-// //C'est à partir de cet objet myRouter, que nous allons implémenter les méthodes.
-// var myRouter = express.Router();
+//Afin de faciliter le routage (les URL que nous souhaitons prendre en charge dans notre API), nous créons un objet Router.
+//C'est à partir de cet objet myRouter, que nous allons implémenter les méthodes.
+var myRouter = express.Router();
 
 myRouter
-  .route("/all")
+  .route("/bus")
   // GET
   .get(function(req, res) {
-    res.json({
-      message: "Tous les itineraires",
-      methode: req.method
+    let resultat = [];
+
+    let busTab = [];
+    let getAllBusFromStop =
+      "SELECT DISTINCT route_short_name FROM allData WHERE idStop LIKE '12'";
+    con.query(getAllBusFromStop, function(err, result) {
+      if (err) {
+        console.log(err);
+      }
+      // Requete reussite
+      else {
+        console.log(result);
+        result.forEach(element => {
+          busTab.push(element.route_short_name);
+        });
+        let getInformationsFromBus = "";
+        var itemsProcessed = 0;
+        busTab.forEach((busNumber, index, array) => {
+          itemsProcessed++;
+        });
+      }
+    });
+  });
+
+myRouter
+  .route("/informations")
+  // GET
+  .get(function(req, res) {
+    let busNumber = req.query.bus;
+    var date = new Date();
+    let hour =
+      (date.getHours() < 10 ? "0" : "") +
+      date.getHours() +
+      ":" +
+      (date.getMinutes() < 10 ? "0" : "") +
+      date.getMinutes() +
+      ":" +
+      (date.getSeconds() < 10 ? "0" : "") +
+      date.getSeconds();
+    getInformationsFromBus =
+      "SELECT route_short_name, stop_lat, stop_lon, departure_time FROM allData WHERE route_short_name LIKE '" +
+      busNumber +
+      "' AND departure_time > '" +
+      hour +
+      "'";
+    console.log(getInformationsFromBus);
+
+    con.query(getInformationsFromBus, function(err, result) {
+      if (err) {
+        console.log(err);
+      }
+      // Requete reussite
+      else {
+        console.log(result);
+
+        res.json({
+          result: result,
+          methode: req.method
+        });
+      }
     });
   });
 // //   //POST
