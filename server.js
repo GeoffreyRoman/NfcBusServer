@@ -17,7 +17,7 @@ con.connect(function(err) {
   console.log("Connection à la BDD réussi");
 });
 
-var hostname = "localhost";
+var hostname = "0.0.0.0";
 var port = 3000;
 
 var app = express();
@@ -70,7 +70,7 @@ myRouter
       (date.getSeconds() < 10 ? "0" : "") +
       date.getSeconds();
     getInformationsFromBus =
-      "SELECT route_short_name, stop_lat, stop_lon, departure_time FROM allData WHERE route_short_name LIKE '" +
+      "SELECT route_short_name, stop_lat, stop_lon, departure_time, idTrips, stop_id FROM allData WHERE route_short_name LIKE '" +
       busNumber +
       "' AND departure_time > '" +
       hour +
