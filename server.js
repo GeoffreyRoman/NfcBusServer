@@ -2,38 +2,19 @@ var express = require("express");
 var mysql = require("mysql");
 
 var con = mysql.createConnection({
-  host: "localhost",
+  host: "82.253.136.83",
   user: "root",
-  port: "8888" /* port on which phpmyadmin run */,
-  password: "root",
-  database: "nfcbus",
-  socketPath: "/Applications/MAMP/tmp/mysql/mysql.sock" //for mac and linux
+  password: "geoffrey",
+  database: "nfcbus"
 });
 
 con.connect(function(err) {
-  var i = 0;
-
   if (err) {
-    console.log(err);
-  } else {
-    console.log("Connexion reussite");
-
-    // Ecriture dans la BBD (plus besoin maintenant)
-
-    // fs.readFileSync("sql1.sql")
-    //   .toString()
-    //   .split("\n")
-    //   .forEach(function(line) {
-    //     con.query(line, function(err, result) {
-    //       if (err) {
-    //         console.log(err);
-    //       } else {
-    //         i++;
-    //         console.log(i + " record inserted");
-    //       }
-    //     });
-    //   });
+    console.error("error connecting: " + err.stack);
+    return;
   }
+
+  console.log("Connection à la BDD réussi");
 });
 
 var hostname = "localhost";
@@ -53,13 +34,15 @@ myRouter
       "SELECT DISTINCT route_short_name FROM allData WHERE idStop LIKE '" +
       stopNumber +
       "'";
+    console.log(getAllBusFromStop);
+
     con.query(getAllBusFromStop, function(err, result) {
       if (err) {
         console.log(err);
       }
       // Requete reussite
       else {
-        console.log(result);
+        console.log("result : " + result);
         result.forEach(element => {
           busTab.push(element.route_short_name);
         });
