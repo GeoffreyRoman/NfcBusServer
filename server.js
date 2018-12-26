@@ -59,13 +59,14 @@ var myRouter = express.Router();
 
 myRouter
   .route("/bus")
-  // GET
+  // Retourne tous les numeros de bus passant a l'arret mis en parametre
   .get(function(req, res) {
-    let resultat = [];
-
+    let stopNumber = req.query.stop;
     let busTab = [];
     let getAllBusFromStop =
-      "SELECT DISTINCT route_short_name FROM allData WHERE idStop LIKE '12'";
+      "SELECT DISTINCT route_short_name FROM allData WHERE idStop LIKE '" +
+      stopNumber +
+      "'";
     con.query(getAllBusFromStop, function(err, result) {
       if (err) {
         console.log(err);
@@ -76,10 +77,9 @@ myRouter
         result.forEach(element => {
           busTab.push(element.route_short_name);
         });
-        let getInformationsFromBus = "";
-        var itemsProcessed = 0;
-        busTab.forEach((busNumber, index, array) => {
-          itemsProcessed++;
+        res.json({
+          result: busTab,
+          methode: req.method
         });
       }
     });
@@ -87,7 +87,7 @@ myRouter
 
 myRouter
   .route("/informations")
-  // GET
+  // Retourne toutes les informations necessaire sur le numero du bus passe en parametre
   .get(function(req, res) {
     let busNumber = req.query.bus;
     var date = new Date();
@@ -123,27 +123,6 @@ myRouter
       }
     });
   });
-// //   //POST
-// //   .post(function(req, res) {
-// //     res.json({
-// //       message: "Ajoute une nouvelle piscine à la liste",
-// //       methode: req.method
-// //     });
-// //   })
-// //   //PUT
-// //   .put(function(req, res) {
-// //     res.json({
-// //       message: "Mise à jour des informations d'une piscine dans la liste",
-// //       methode: req.method
-// //     });
-// //   })
-// //   //DELETE
-// //   .delete(function(req, res) {
-// //     res.json({
-// //       message: "Suppression d'une piscine dans la liste",
-// //       methode: req.method
-// //     });
-// //   });
 
 // Nous demandons à l'application d'utiliser notre routeur
 app.use(myRouter);
