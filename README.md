@@ -14,6 +14,8 @@ npm run start
 
 ## Liste des routes
 
+### Obtenir tous le bus passant par un arret
+
 ```shell
 /bus?stop=12
 ```
@@ -25,6 +27,8 @@ Retourne tous les numeros de bus passant a l'arret mis en parametre
 ```
 
 ---
+
+### Obtenir les informations d'un bus
 
 ```shell
 /informations?bus=12
