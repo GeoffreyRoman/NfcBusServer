@@ -46,5 +46,5 @@ Retourne toutes les informations necessaire sur le numéro du bus passé en para
     }, ...
 ]
 ```
-> Ces informations sur toujours supérieur à l'heure actuelle, on ne peut pas obtenir departure_time: `'17:04:00'` si il est 18h
+> Ces informations sur toujours supérieur à l'heure actuelle, on ne peut pas obtenir `departure_time: '17:04:00'` si il est 18h
 
