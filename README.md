@@ -45,8 +45,29 @@ Retourne toutes les informations necessaire sur le numéro du bus passé en para
         departure_time: '17:04:00',
         idTrips: 1315015,
         stop_id: 1446
-    }, ...
+    },
+    ...
 ]
 ```
 
 > Ces informations sur toujours supérieur à l'heure actuelle, on ne peut pas obtenir `departure_time: '17:04:00'` si il est 18h
+
+---
+
+### Obtenir tous les arrets de bus
+
+```shell
+/stops
+```
+
+```shell
+[
+    {
+        idStop: 1,
+        stop_name: "Abattoirs",
+        stop_lat: 43.7181071846,
+        stop_lon: 7.284811704
+    },
+    ...
+]
+```

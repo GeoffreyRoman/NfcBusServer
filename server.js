@@ -93,6 +93,26 @@ myRouter
     });
   });
 
+myRouter
+  .route("/stops")
+  // Retourne tous les arrets de bus
+  .get(function(req, res) {
+    let getAllStops = "SELECT idStop, stop_name, stop_lat, stop_lon FROM stops";
+    con.query(getAllStops, function(err, result) {
+      if (err) {
+        console.log(err);
+      }
+      // Requete reussite
+      else {
+        console.log(result);
+        res.json({
+          result: result,
+          methode: req.method
+        });
+      }
+    });
+  });
+
 app.use(myRouter);
 
 // Démarrer le serveur
