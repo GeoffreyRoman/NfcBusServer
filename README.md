@@ -34,7 +34,7 @@ Retourne tous les numeros de bus passant a l'arret mis en parametre
 /informations?bus=12
 ```
 
-Retourne toutes les informations necessaire sur le numéro du bus passé en parametre 
+Retourne toutes les informations necessaire sur le numéro du bus passé en parametre
 
 ```shell
 [
@@ -42,9 +42,11 @@ Retourne toutes les informations necessaire sur le numéro du bus passé en para
         route_short_name: '12',
         stop_lat: 43.6849499423,
         stop_lon: 7.2357431643,
-        departure_time: '17:04:00'
+        departure_time: '17:04:00',
+        idTrips: 1315015,
+        stop_id: 1446
     }, ...
 ]
 ```
-> Ces informations sur toujours supérieur à l'heure actuelle, on ne peut pas obtenir `departure_time: '17:04:00'` si il est 18h
 
+> Ces informations sur toujours supérieur à l'heure actuelle, on ne peut pas obtenir `departure_time: '17:04:00'` si il est 18h
