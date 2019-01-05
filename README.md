@@ -53,7 +53,9 @@ Retourne toutes les informations necessaire sur le numéro du bus passé en para
 > Ces informations sur toujours supérieur à l'heure actuelle, on ne peut pas obtenir `departure_time: '17:04:00'` si il est 18h
 
 ```
-Récupèrer le <b>tripsId</b> de l’arrêt le plus proche du marqueur.<br> Regarder si il y a le tripId sur l’arrêt taggé, si il y est pas, Essayer avec le tripId du bus qui passe après
+Récupèrer le tripsId de l’arrêt le plus proche du marqueur.
+Regarder si il y a le tripId sur l’arrêt taggé, si il y est pas, 
+essayer avec le tripId du bus qui passe après
 ```
 
 ---
