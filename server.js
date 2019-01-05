@@ -24,6 +24,12 @@ var app = express();
 
 var myRouter = express.Router();
 
+var bus = [];
+var nearestStop = null;
+var firstStopNumber = "";
+var tripsInfo = [];
+var resultatFinal = [];
+
 myRouter
   .route("/bus")
   // Retourne tous les numeros de bus passant a l'arret mis en parametre
@@ -94,49 +100,6 @@ myRouter
   });
 
 myRouter
-  .route("/tripsId")
-  // Retourne tous les tripsId (trip == bus physique) par rapport au numero du bus passe en parametre
-  .get(function(req, res) {
-    // TODO Ameliorer la vitesse de calcul en prenant que les bus passant dans max 2H
-    let busNumber = req.query.bus;
-    var date = new Date();
-    let hour =
-      (date.getHours() < 10 ? "0" : "") +
-      date.getHours() +
-      ":" +
-      (date.getMinutes() < 10 ? "0" : "") +
-      date.getMinutes() +
-      ":" +
-      (date.getSeconds() < 10 ? "0" : "") +
-      date.getSeconds();
-    getTripsIdFromBus =
-      "SELECT DISTINCT idTrips FROM allData WHERE route_short_name LIKE '" +
-      busNumber +
-      "' AND departure_time > '" +
-      hour +
-      "'";
-    console.log(getTripsIdFromBus);
-
-    con.query(getTripsIdFromBus, function(err, result) {
-      if (err) {
-        console.log(err);
-      }
-      // Requete reussite
-      else {
-        tabRes = [];
-        for (let i = 0; i < result.length; i++) {
-          tabRes.push(result[i].idTrips);
-        }
-        console.log("Fin du calcul pour : " + getTripsIdFromBus);
-        res.json({
-          result: tabRes,
-          methode: req.method
-        });
-      }
-    });
-  });
-
-myRouter
   .route("/stops")
   // Retourne tous les arrets de bus
   .get(function(req, res) {
@@ -164,18 +127,15 @@ myRouter
     let long = req.query.long;
     let lat = req.query.lat;
     // On recupère les bus
-    let stopNumber = req.query.stop;
+    firstStopNumber = req.query.stop;
     var arretTeste = 0;
     var tourDeBoucle = 0;
 
-    console.log(stopNumber);
-
     var distance = Number.MAX_SAFE_INTEGER;
-    var nearestStop = null;
     let busTab = [];
     let getAllBusFromStop =
       "SELECT DISTINCT route_short_name FROM allData WHERE idStop LIKE '" +
-      stopNumber +
+      firstStopNumber +
       "'";
     console.log(getAllBusFromStop);
 
@@ -187,10 +147,12 @@ myRouter
       else {
         console.log("Fin du calcul pour : " + getAllBusFromStop);
         var itemsProcessed = 0;
+        bus = [];
+
         result.forEach(element => {
           // busTab.push(element.route_short_name);
           console.log("ELEMENT = " + element.route_short_name);
-
+          bus.push(element.route_short_name);
           let getAllStops =
             "SELECT DISTINCT route_short_name, idStop, stop_name, stop_lat, stop_lon FROM allData where route_short_name LIKE '" +
             element.route_short_name +
@@ -233,6 +195,9 @@ myRouter
     setTimeout(() => {
       console.log("Nombre d'arret teste : " + arretTeste);
       console.log("Nombre de tour : " + tourDeBoucle);
+      getFinalResult();
+      console.log(bus);
+
       res.json({
         result: nearestStop,
         distance: distance,
@@ -257,6 +222,92 @@ function callback(distance, nearestStop, res, req, arret, stop) {
   });
 }
 
+myRouter
+  .route("/tripsId")
+  // Retourne tous les tripsId (trip == bus physique) par rapport au numero du bus passe en parametre
+  .get(function(req, res) {});
+
+function getFinalResult() {
+  // TODO Ameliorer la vitesse de calcul en prenant que les bus passant dans max 2H
+  var date = new Date();
+  let hour =
+    (date.getHours() < 10 ? "0" : "") +
+    date.getHours() -
+    10 +
+    ":" +
+    (date.getMinutes() < 10 ? "0" : "") +
+    date.getMinutes() +
+    ":" +
+    (date.getSeconds() < 10 ? "0" : "") +
+    date.getSeconds();
+
+  let busQuery = " AND (route_short_name LIKE '" + bus[0] + "' ";
+  for (let i = 1; i < bus.length; i++) {
+    busQuery += "OR route_short_name LIKE '" + bus[i] + "' ";
+  }
+  busQuery += ")";
+  console.log(busQuery);
+
+  getTripsIdFromBus =
+    "SELECT route_short_name, stop_lat, stop_lon, departure_time, idTrips, stop_id FROM allData WHERE departure_time > '" +
+    hour +
+    "'" +
+    busQuery +
+    " AND stop_id LIKE '" +
+    nearestStop.idStop +
+    "'";
+  console.log(getTripsIdFromBus);
+
+  con.query(getTripsIdFromBus, function(err, result) {
+    if (err) {
+      console.log(err);
+    }
+    // Requete reussite
+    else {
+      tabRes = [];
+      for (let i = 0; i < result.length; i++) {
+        tabRes.push(result[i]);
+      }
+      console.log("Fin du calcul pour : " + getTripsIdFromBus);
+      // tripsId = tabRes;
+
+      // Ici on a tous les heures d'arriver des bus à l'arret le plus proche
+      // Il faut trouver la meilleure heure avec chacun des tripID
+      console.log("--------------");
+      console.log(tabRes);
+
+      console.log(tabRes);
+      tripsInfo = tabRes;
+      let tripsQuery = " (";
+      for (let i = 0; i < tripsInfo.length - 1; i++) {
+        tripsQuery += "'" + tripsInfo[i].idTrips + "' ,";
+      }
+      tripsQuery += "'" + tripsInfo[tripsInfo.length - 1].idTrips + "' )";
+      var query =
+        "SELECT * FROM allData WHERE stop_id LIKE '" +
+        firstStopNumber +
+        "' AND departure_time > '" +
+        hour +
+        "' AND trip_id IN " +
+        tripsQuery;
+
+      console.log(query);
+
+      con.query(query, function(err, result) {
+        if (err) {
+          console.log(err);
+        }
+        // Requete reussite
+        else {
+          console.log("----------------------");
+          console.log("Resultat Final: ");
+
+          console.log(result);
+        }
+      });
+    }
+  });
+}
 // route get tous les TripId des bus qui passe par le stop le plus proche
 
 // String res = "AND route_short_name LIKE '" + busArray[0].route_short_name;
@@ -273,6 +324,14 @@ function callback(distance, nearestStop, res, req, arret, stop) {
 // OR route_short_name LIKE "13"
 
 // Tous les bus passant à l'arret de depart
+
+// --------------
+
+// let tripsQuery = "AND (idTrips LIKE '" + tripsInfo[0].idTrips + "' ";
+// for (let i = 1; i < tripsInfo.length; i++) {
+//   tripsQuery += 'OR idTrips LIKE "' + tripsInfo[i].idTrips + '" ';
+// }
+// tripsQuery += ")";
 
 function getDistanceFromLongLat(lon1, lat1, lon2, lat2, unit) {
   if (lat1 == lat2 && lon1 == lon2) {
