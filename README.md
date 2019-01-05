@@ -39,11 +39,11 @@ Retourne toutes les informations necessaire sur le numéro du bus passé en para
 ```shell
 [
     {
-        route_short_name: '12',
-        stop_lat: 43.6849499423,
-        stop_lon: 7.2357431643,
-        departure_time: '17:04:00',
-        idTrips: 1315015,
+        route_short_name: "12",
+        stop_lat: 43.7040523391, 
+        stop_lon: 7.2617440535,
+        departure_time: "13:20:00",
+        idTrips: 1315016,
         stop_id: 1446
     },
     ...
@@ -51,6 +51,12 @@ Retourne toutes les informations necessaire sur le numéro du bus passé en para
 ```
 
 > Ces informations sur toujours supérieur à l'heure actuelle, on ne peut pas obtenir `departure_time: '17:04:00'` si il est 18h
+
+```mermaid
+sequenceDiagram
+Resultat ->> Itineraire: Obtenir l'itineraire
+Note right of Resultat: Récupèrer le <b>tripsId</b> de l’arrêt le plus proche du marqueur.<br> Regarder si il y a le tripId sur l’arrêt taggé, si il y est pas, Essayer avec le tripId du bus qui passe après
+```
 
 ---
 
