@@ -40,7 +40,7 @@ Retourne toutes les informations necessaire sur le numéro du bus passé en para
 [
     {
         route_short_name: "12",
-        stop_lat: 43.7040523391, 
+        stop_lat: 43.7040523391,
         stop_lon: 7.2617440535,
         departure_time: "13:20:00",
         idTrips: 1315016,
@@ -54,8 +54,30 @@ Retourne toutes les informations necessaire sur le numéro du bus passé en para
 
 ```
 Récupèrer le tripsId de l’arrêt le plus proche du marqueur.
-Regarder si il y a le tripId sur l’arrêt taggé, si il y est pas, 
+Regarder si il y a le tripId sur l’arrêt taggé, si il y est pas,
 essayer avec le tripId du bus qui passe après
+```
+
+---
+
+### Obtenir les tripsId d'un bus
+
+```shell
+/tripsId?bus=12
+```
+
+Retourne tous les tripsId (trip == bus physique) par rapport au numero du bus passe en parametre
+
+```shell
+[
+    1315016,
+    1315017,
+    1315018,
+    1315019,
+    1315020,
+    1315021,
+    ...
+]
 ```
 
 ---
