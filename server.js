@@ -1,11 +1,20 @@
 var express = require("express");
 var mysql = require("mysql");
 
+// var con = mysql.createConnection({
+//   host: "82.253.136.83",
+//   user: "root",
+//   password: "geoffrey",
+//   database: "nfcbus"
+// });
+
 var con = mysql.createConnection({
-  host: "82.253.136.83",
+  host: "localhost",
   user: "root",
-  password: "geoffrey",
-  database: "nfcbus"
+  port: "8888" /* port on which phpmyadmin run */,
+  password: "root",
+  database: "nfcbus",
+  socketPath: "/Applications/MAMP/tmp/mysql/mysql.sock" //for mac and linux
 });
 
 con.connect(function(err) {
@@ -27,8 +36,10 @@ var myRouter = express.Router();
 var bus = [];
 var nearestStop = null;
 var firstStopNumber = "";
+var tripId = [];
 var tripsInfo = [];
 var resultatFinal = [];
+var directionFirstStop;
 
 myRouter
   .route("/bus")
@@ -133,8 +144,19 @@ myRouter
 
     var distance = Number.MAX_SAFE_INTEGER;
     let busTab = [];
+    var date = new Date();
+    let hour =
+      (date.getHours() < 10 ? "0" : "") +
+      date.getHours() +
+      ":" +
+      (date.getMinutes() < 10 ? "0" : "") +
+      date.getMinutes() +
+      ":" +
+      (date.getSeconds() < 10 ? "0" : "") +
+      date.getSeconds();
+
     let getAllBusFromStop =
-      "SELECT DISTINCT route_short_name FROM allData WHERE idStop LIKE '" +
+      "SELECT DISTINCT route_short_name, direction_id FROM allData WHERE idStop LIKE '" +
       firstStopNumber +
       "'";
     console.log(getAllBusFromStop);
@@ -148,14 +170,21 @@ myRouter
         console.log("Fin du calcul pour : " + getAllBusFromStop);
         var itemsProcessed = 0;
         bus = [];
+        directionFirstStop = result[0].direction_id;
+        console.log("----------------------");
+
+        console.log(result.length);
+        console.log("----------------------");
 
         result.forEach(element => {
-          // busTab.push(element.route_short_name);
-          console.log("ELEMENT = " + element.route_short_name);
-          bus.push(element.route_short_name);
+          busTab.push(element.route_short_name);
+          // console.log("ELEMENT = " + element.trip_id);
+          // tripId.push(element.trip_id);
           let getAllStops =
-            "SELECT DISTINCT route_short_name, idStop, stop_name, stop_lat, stop_lon FROM allData where route_short_name LIKE '" +
+            "SELECT route_short_name, idStop, stop_name, stop_lat, stop_lon FROM allData where route_short_name LIKE '" +
             element.route_short_name +
+            "' AND departure_time > '" +
+            hour +
             "'";
           con.query(getAllStops, (err, result) => {
             if (err) {
@@ -163,8 +192,8 @@ myRouter
             }
             // Requete reussite
             else {
-              console.log("Fin du calcul pour : " + getAllStops);
-              console.log("RESULTA TAILE ------->> " + result.length);
+              // console.log("Fin du calcul pour : " + getAllStops);
+              // console.log("RESULTA TAILE ------->> " + result.length);
 
               result.forEach(stop => {
                 let stopDistance = getDistanceFromLongLat(
@@ -183,7 +212,7 @@ myRouter
                 // console.log("DANS la BOUCLE");
               });
               tourDeBoucle++;
-              console.log("FIN de BOUCLE");
+              // console.log("FIN de BOUCLE");
             }
           });
         });
@@ -195,7 +224,7 @@ myRouter
     setTimeout(() => {
       console.log("Nombre d'arret teste : " + arretTeste);
       console.log("Nombre de tour : " + tourDeBoucle);
-      getFinalResult();
+      // getFinalResult();
       console.log(bus);
 
       res.json({
@@ -206,34 +235,72 @@ myRouter
     }, 5000);
   });
 
-// function callback(req, res, distance, nearestStop) {
-function callback(distance, nearestStop, res, req, arret, stop) {
-  console.log("CALLBACK");
+// // function callback(req, res, distance, nearestStop) {
+// function callback(distance, nearestStop, res, req, arret, stop) {
+//   console.log("CALLBACK");
 
-  console.log(distance);
-  console.log(nearestStop);
-  console.log("Nombre Total d'arret teste : " + arret);
-  console.log("Stop: " + stop);
+//   console.log(distance);
+//   console.log(nearestStop);
+//   console.log("Nombre Total d'arret teste : " + arret);
+//   console.log("Stop: " + stop);
 
-  res.json({
-    result: nearestStop,
-    distance: distance,
-    methode: req.method
-  });
-}
+//   res.json({
+//     result: nearestStop,
+//     distance: distance,
+//     methode: req.method
+//   });
+// }
 
 myRouter
   .route("/tripsId")
   // Retourne tous les tripsId (trip == bus physique) par rapport au numero du bus passe en parametre
   .get(function(req, res) {});
 
+myRouter.route("/result").get(function(req, res) {
+  var date = new Date();
+  let hour =
+    (date.getHours() < 10 ? "0" : "") +
+    date.getHours() +
+    ":" +
+    (date.getMinutes() < 10 ? "0" : "") +
+    date.getMinutes() +
+    ":" +
+    (date.getSeconds() < 10 ? "0" : "") +
+    date.getSeconds();
+
+  let query =
+    "SELECT DISTINCT trip_id FROM allData WHERE idStop LIKE '" +
+    firstStopNumber +
+    "'";
+  console.log(query);
+
+  con.query(query, (err, result) => {
+    if (err) {
+      console.log(err);
+    }
+    // Requete reussite
+    else {
+      let direction_id = goodDirectionOfTrip(result[0].trip_id, res);
+
+      // result.forEach(element => {
+      // for (let i = 0; i < result.length; i++) {
+      //   const element = result[i];
+      //   goodDirectionOfTrip(element.trip_id, res);
+      //   // console.log(goodTrips);
+      //   // console.log(goodTrips.length);
+      // }
+    }
+  });
+});
+
+// ------------------------------------------------------------
+
 function getFinalResult() {
   // TODO Ameliorer la vitesse de calcul en prenant que les bus passant dans max 2H
   var date = new Date();
   let hour =
     (date.getHours() < 10 ? "0" : "") +
-    date.getHours() -
-    10 +
+    date.getHours() +
     ":" +
     (date.getMinutes() < 10 ? "0" : "") +
     date.getMinutes() +
@@ -253,8 +320,8 @@ function getFinalResult() {
     hour +
     "'" +
     busQuery +
-    " AND stop_id LIKE '" +
-    nearestStop.idStop +
+    " AND stop_name LIKE '" +
+    nearestStop.stop_name +
     "'";
   console.log(getTripsIdFromBus);
 
@@ -284,9 +351,9 @@ function getFinalResult() {
       }
       tripsQuery += "'" + tripsInfo[tripsInfo.length - 1].idTrips + "' )";
       var query =
-        "SELECT * FROM allData WHERE stop_id LIKE '" +
+        "SELECT * FROM allData WHERE stop_id LIKE " +
         firstStopNumber +
-        "' AND departure_time > '" +
+        " AND departure_time > '" +
         hour +
         "' AND trip_id IN " +
         tripsQuery;
@@ -308,6 +375,7 @@ function getFinalResult() {
     }
   });
 }
+
 // route get tous les TripId des bus qui passe par le stop le plus proche
 
 // String res = "AND route_short_name LIKE '" + busArray[0].route_short_name;
@@ -332,6 +400,97 @@ function getFinalResult() {
 //   tripsQuery += 'OR idTrips LIKE "' + tripsInfo[i].idTrips + '" ';
 // }
 // tripsQuery += ")";
+
+function goodDirectionOfTrip(trip, res) {
+  // TODO return 0 ou 1
+  var date = new Date();
+  let hour =
+    (date.getHours() < 10 ? "0" : "") +
+    date.getHours() +
+    ":" +
+    (date.getMinutes() < 10 ? "0" : "") +
+    date.getMinutes() +
+    ":" +
+    (date.getSeconds() < 10 ? "0" : "") +
+    date.getSeconds();
+  let query =
+    "SELECT * FROM `allData` WHERE `idTrips` LIKE '" +
+    trip +
+    "' ORDER BY `arrival_time` ASC";
+  // if(firstStopNumber avant nearestStop )
+  con.query(query, function(err, result) {
+    let direction_id;
+    if (err) {
+      console.log(err);
+    }
+    // Requete reussite
+    else {
+      // result.forEach(element => {
+      console.log("goodDirectionOfTrip : " + result.length);
+
+      for (let i = 0; i < result.length; i++) {
+        const element = result[i];
+
+        if (element.stop_id == firstStopNumber) {
+          // C'est correct
+          console.log("good");
+          direction_id = element.direction_id;
+          break;
+        } else if (element.stop_id == nearestStop.stop_id) {
+          console.log("bad");
+          direction_id = (element.direction_id + 1) % 2;
+          break;
+        }
+      }
+      let query2 =
+        "SELECT DISTINCT trip_id FROM allData WHERE idStop LIKE '" +
+        firstStopNumber +
+        "' AND direction_id LIKE '" +
+        1 +
+        "' AND departure_time > '" +
+        hour +
+        "'";
+      console.log(query2);
+
+      con.query(query2, (err, result) => {
+        if (err) {
+          console.log(err);
+        }
+        // Requete reussite
+        else {
+          console.log("-----------------------------------------");
+          console.log("DERNIERE");
+          console.log(result.length);
+          console.log("-----------------------------------------");
+
+          let tripsQuery = " (";
+          for (let i = 0; i < result.length - 1; i++) {
+            tripsQuery += '"' + result[i].trip_id + '" ,';
+          }
+          tripsQuery += '"' + result[result.length - 1].trip_id + '" )';
+
+          let query3 =
+            'SELECT trip_id FROM allData WHERE idStop LIKE "' +
+            nearestStop.idStop +
+            '" AND trip_id IN ' +
+            tripsQuery;
+          console.log(query3);
+          con.query(query3, (err, result) => {
+            if (err) {
+              console.log(err);
+            }
+            // Requete reussite
+            else {
+              console.log("<<<<<<<<<<<<<<<<<<<<<");
+              console.log(result.length);
+              console.log("<<<<<<<<<<<<<<<<<<<<<");
+            }
+          });
+        }
+      });
+    }
+  });
+}
 
 function getDistanceFromLongLat(lon1, lat1, lon2, lat2, unit) {
   if (lat1 == lat2 && lon1 == lon2) {
