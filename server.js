@@ -36,10 +36,10 @@ var myRouter = express.Router();
 var bus = [];
 var nearestStop = null;
 var firstStopNumber = "";
-var tripId = [];
-var tripsInfo = [];
-var resultatFinal = [];
-var directionFirstStop;
+var tripId;
+var departureTime;
+var arrivalTime;
+var stop_name_first;
 
 myRouter
   .route("/bus")
@@ -156,7 +156,7 @@ myRouter
       date.getSeconds();
 
     let getAllBusFromStop =
-      "SELECT DISTINCT route_short_name, direction_id FROM allData WHERE idStop LIKE '" +
+      "SELECT DISTINCT route_short_name, direction_id, stop_name FROM allData WHERE idStop LIKE '" +
       firstStopNumber +
       "'";
     console.log(getAllBusFromStop);
@@ -171,6 +171,7 @@ myRouter
         var itemsProcessed = 0;
         bus = [];
         directionFirstStop = result[0].direction_id;
+        stop_name_first = result[0].stop_name;
         console.log("----------------------");
 
         console.log(result.length);
@@ -181,10 +182,12 @@ myRouter
           // console.log("ELEMENT = " + element.trip_id);
           // tripId.push(element.trip_id);
           let getAllStops =
-            "SELECT route_short_name, idStop, stop_name, stop_lat, stop_lon FROM allData where route_short_name LIKE '" +
+            "SELECT route_short_name, idStop, stop_name, stop_lat, stop_lon, departure_time, trip_id FROM allData where route_short_name LIKE '" +
             element.route_short_name +
             "' AND departure_time > '" +
             hour +
+            "' AND direction_id LIKE '" +
+            directionFirstStop +
             "'";
           con.query(getAllStops, (err, result) => {
             if (err) {
@@ -226,14 +229,83 @@ myRouter
       console.log("Nombre de tour : " + tourDeBoucle);
       // getFinalResult();
       console.log(bus);
-
-      res.json({
-        result: nearestStop,
-        distance: distance,
-        methode: req.method
-      });
+      getInfoFromSecondStop(nearestStop, res, distance, req);
     }, 5000);
   });
+
+function getInfoFromSecondStop(nearestStop, res, distance, req) {
+  var date = new Date();
+  let hour =
+    (date.getHours() < 10 ? "0" : "") +
+    date.getHours() +
+    ":" +
+    (date.getMinutes() < 10 ? "0" : "") +
+    date.getMinutes() +
+    ":" +
+    (date.getSeconds() < 10 ? "0" : "") +
+    date.getSeconds();
+
+  let query =
+    "SELECT * FROM allData WHERE idStop LIKE '" +
+    firstStopNumber +
+    "' AND departure_time > '" +
+    hour +
+    "' AND route_short_name LIKE '" +
+    nearestStop.route_short_name +
+    "' order by departure_time";
+  console.log(query);
+
+  con.query(query, (err, result) => {
+    if (err) {
+      console.log(err);
+    }
+    // Requete reussite
+    else {
+      tripId = result[0].trip_id;
+      departureTime = result[0].departure_time;
+      console.log(">>>>>>>>>>>>>>>>>>-----");
+      console.log(tripId);
+      console.log(departureTime);
+      console.log(">>>>>>>>>>>>>>>>>>-----");
+      let query2 =
+        "SELECT departure_time FROM allData WHERE idStop LIKE '" +
+        nearestStop.idStop +
+        "' AND departure_time > '" +
+        hour +
+        "' AND trip_id LIKE '" +
+        tripId +
+        "'";
+      console.log(query2);
+
+      con.query(query2, (err, result) => {
+        if (err) {
+          console.log(err);
+        }
+        // Requete reussite
+        else {
+          console.log("aaaaaaaaaaaaaaaaaa");
+          console.log(result);
+          // console.log(result[0].departure_time);
+
+          if (result.length > 0) {
+            nearestStop.departure_time_first = result[0].departure_time;
+          }
+          nearestStop.stop_name_first = stop_name_first;
+          console.log("aaaaaaaaaaaaaaaaaa");
+          res.json({
+            result: nearestStop,
+            distance: distance,
+            methode: req.method
+          });
+        }
+      });
+    }
+  });
+
+  //     tripId;
+  // var departureTime;
+  // var arrivalTime;
+}
 
 // // function callback(req, res, distance, nearestStop) {
 // function callback(distance, nearestStop, res, req, arret, stop) {
