@@ -188,108 +188,110 @@ myRouter
     var arretTeste = 0;
     var tourDeBoucle = 0;
 
-    var distance = Number.MAX_SAFE_INTEGER;
-    let busTab = [];
-    var date = new Date();
-    let hour =
-      (date.getHours() < 10 ? "0" : "") +
-      date.getHours() +
-      ":" +
-      (date.getMinutes() < 10 ? "0" : "") +
-      date.getMinutes() +
-      ":" +
-      (date.getSeconds() < 10 ? "0" : "") +
-      date.getSeconds();
+    if (long && lat && firstStopNumber) {
+      var distance = Number.MAX_SAFE_INTEGER;
+      let busTab = [];
+      var date = new Date();
+      let hour =
+        (date.getHours() < 10 ? "0" : "") +
+        date.getHours() +
+        ":" +
+        (date.getMinutes() < 10 ? "0" : "") +
+        date.getMinutes() +
+        ":" +
+        (date.getSeconds() < 10 ? "0" : "") +
+        date.getSeconds();
 
-    let hour2 =
-      (date.getHours() + 2 < 10 ? "0" : "") +
-      date.getHours() +
-      2 +
-      ":" +
-      (date.getMinutes() < 10 ? "0" : "") +
-      date.getMinutes() +
-      ":" +
-      (date.getSeconds() < 10 ? "0" : "") +
-      date.getSeconds();
+      let hour2 =
+        (date.getHours() + 2 < 10 ? "0" : "") +
+        date.getHours() +
+        2 +
+        ":" +
+        (date.getMinutes() < 10 ? "0" : "") +
+        date.getMinutes() +
+        ":" +
+        (date.getSeconds() < 10 ? "0" : "") +
+        date.getSeconds();
 
-    let getAllBusFromStop =
-      "SELECT DISTINCT route_short_name, direction_id, stop_name FROM allData WHERE idStop LIKE '" +
-      firstStopNumber +
-      "'";
-    console.log(getAllBusFromStop);
+      let getAllBusFromStop =
+        "SELECT DISTINCT route_short_name, direction_id, stop_name FROM allData WHERE idStop LIKE '" +
+        firstStopNumber +
+        "'";
+      console.log(getAllBusFromStop);
 
-    con.query(getAllBusFromStop, (err, result) => {
-      if (err) {
-        console.log(err);
-      }
-      // Requete reussite
-      else {
-        console.log("Fin du calcul pour : " + getAllBusFromStop);
-        var itemsProcessed = 0;
-        bus = [];
-        directionFirstStop = result[0].direction_id;
-        stop_name_first = result[0].stop_name;
-        console.log("----------------------");
+      con.query(getAllBusFromStop, (err, result) => {
+        if (err) {
+          console.log(err);
+        }
+        // Requete reussite
+        else {
+          console.log("Fin du calcul pour : " + getAllBusFromStop);
+          var itemsProcessed = 0;
+          bus = [];
+          directionFirstStop = result[0].direction_id;
+          stop_name_first = result[0].stop_name;
+          console.log("----------------------");
 
-        console.log(result.length);
-        console.log("----------------------");
+          console.log(result.length);
+          console.log("----------------------");
 
-        result.forEach(element => {
-          busTab.push(element.route_short_name);
-          // console.log("ELEMENT = " + element.trip_id);
-          // tripId.push(element.trip_id);
-          let getAllStops =
-            "SELECT route_short_name, idStop, stop_name, stop_lat, stop_lon, departure_time, trip_id FROM allData where route_short_name LIKE '" +
-            element.route_short_name +
-            "' AND departure_time > '" +
-            hour +
-            "' AND departure_time < '" +
-            hour2 +
-            "' AND direction_id LIKE '" +
-            directionFirstStop +
-            "'";
-          con.query(getAllStops, (err, result) => {
-            if (err) {
-              console.log(err);
-            }
-            // Requete reussite
-            else {
-              // console.log("Fin du calcul pour : " + getAllStops);
-              // console.log("RESULTA TAILE ------->> " + result.length);
+          result.forEach(element => {
+            busTab.push(element.route_short_name);
+            // console.log("ELEMENT = " + element.trip_id);
+            // tripId.push(element.trip_id);
+            let getAllStops =
+              "SELECT route_short_name, idStop, stop_name, stop_lat, stop_lon, departure_time, trip_id FROM allData where route_short_name LIKE '" +
+              element.route_short_name +
+              "' AND departure_time > '" +
+              hour +
+              "' AND departure_time < '" +
+              hour2 +
+              "' AND direction_id LIKE '" +
+              directionFirstStop +
+              "'";
+            con.query(getAllStops, (err, result) => {
+              if (err) {
+                console.log(err);
+              }
+              // Requete reussite
+              else {
+                // console.log("Fin du calcul pour : " + getAllStops);
+                // console.log("RESULTA TAILE ------->> " + result.length);
 
-              nearestStop = result[0];
+                nearestStop = result[0];
 
-              console.log("premiere stop : ");
-              console.log(nearestStop);
+                console.log("premiere stop : ");
+                console.log(nearestStop);
 
-              result.forEach(stop => {
-                let stopDistance = getDistanceFromLongLat(
-                  long,
-                  lat,
-                  stop.stop_lon,
-                  stop.stop_lat,
-                  "K"
-                );
-                arretTeste++;
+                result.forEach(stop => {
+                  let stopDistance = getDistanceFromLongLat(
+                    long,
+                    lat,
+                    stop.stop_lon,
+                    stop.stop_lat,
+                    "K"
+                  );
+                  arretTeste++;
 
-                if (stopDistance < distance) {
-                  distance = stopDistance;
-                  nearestStop = stop;
-                }
-                // console.log("DANS la BOUCLE");
-              });
-              tourDeBoucle++;
-              // console.log("FIN de BOUCLE");
-            }
+                  if (stopDistance < distance) {
+                    distance = stopDistance;
+                    nearestStop = stop;
+                  }
+                  // console.log("DANS la BOUCLE");
+                });
+                tourDeBoucle++;
+                // console.log("FIN de BOUCLE");
+              }
+            });
           });
-        });
 
-        console.log(distance);
-        console.log("nearestStop : ");
+          console.log(distance);
+          console.log("nearestStop : ");
 
-        console.log(nearestStop);
-      }
-    });
+          console.log(nearestStop);
+        }
+      });
+    }
     setTimeout(() => {
       console.log("Nombre d'arret teste : " + arretTeste);
       console.log("Nombre de tour : " + tourDeBoucle);
