@@ -204,8 +204,7 @@ myRouter
 
       let hour2 =
         (date.getHours() + 2 < 10 ? "0" : "") +
-        date.getHours() +
-        2 +
+        (parseInt(date.getHours()) + 2) +
         ":" +
         (date.getMinutes() < 10 ? "0" : "") +
         date.getMinutes() +
@@ -213,6 +212,8 @@ myRouter
         (date.getSeconds() < 10 ? "0" : "") +
         date.getSeconds();
 
+      console.log("heure : ");
+      console.log(hour2);
       let getAllBusFromStop =
         "SELECT DISTINCT route_short_name, direction_id, stop_name FROM allData WHERE idStop LIKE '" +
         firstStopNumber +
@@ -257,7 +258,7 @@ myRouter
               else {
                 // console.log("Fin du calcul pour : " + getAllStops);
                 // console.log("RESULTA TAILE ------->> " + result.length);
-
+                console.log(result);
                 nearestStop = result[0];
 
                 console.log("premiere stop : ");
