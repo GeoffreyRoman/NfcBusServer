@@ -159,7 +159,7 @@ myRouter
     let stopId = req.query.id;
 
     let getStop =
-      "SELECT stop_id, stop_name, stop_lat, stop_lon FROM stops WHERE stop_id like '" +
+      "SELECT idStop, stop_name, stop_lat, stop_lon FROM stops WHERE idStop like '" +
       stopId +
       "'";
     con.query(getStop, function(err, result) {
@@ -302,7 +302,7 @@ myRouter
   });
 
 function getInfoFromSecondStop(nearestStop, res, distance, req) {
-  if (nearestStop.length > 0) {
+  if (nearestStop && nearestStop.length > 0) {
     var date = new Date();
     let hour =
       (date.getHours() < 10 ? "0" : "") +
