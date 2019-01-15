@@ -1,23 +1,23 @@
 var express = require("express");
 var mysql = require("mysql");
 
-// var con = mysql.createConnection({
-//   host: "82.253.136.83",
-//   user: "root",
-//   password: "geoffrey",
-//   database: "nfcbus"
-// });
-
 var con = mysql.createConnection({
-  host: "localhost",
+  host: "82.253.136.83",
   user: "root",
-  port: "8888" /* port on which phpmyadmin run */,
-  password: "root",
-  database: "nfcbus",
-  socketPath: "/Applications/MAMP/tmp/mysql/mysql.sock" //for mac and linux
+  password: "geoffrey",
+  database: "nfcbus"
 });
 
-con.connect(function (err) {
+// var con = mysql.createConnection({
+//   host: "localhost",
+//   user: "root",
+//   port: "8888" /* port on which phpmyadmin run */,
+//   password: "root",
+//   database: "nfcbus",
+//   socketPath: "/Applications/MAMP/tmp/mysql/mysql.sock" //for mac and linux
+// });
+
+con.connect(function(err) {
   if (err) {
     console.error("error connecting: " + err.stack);
     return;
@@ -33,20 +33,22 @@ var app = express();
 
 var myRouter = express.Router();
 
-app.use(function (req, res, next) {
-
+app.use(function(req, res, next) {
   // Website you wish to allow to connect
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader("Access-Control-Allow-Origin", "*");
 
   // Request methods you wish to allow
-  res.setHeader('Access-Control-Allow-Methods', 'GET');
+  res.setHeader("Access-Control-Allow-Methods", "GET");
 
   // Request headers you wish to allow
-  res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "X-Requested-With,content-type"
+  );
 
   // Set to true if you need the website to include cookies in the requests sent
   // to the API (e.g. in case you use sessions)
-  res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader("Access-Control-Allow-Credentials", true);
 
   // Pass to next layer of middleware
   next();
@@ -63,7 +65,7 @@ var stop_name_first;
 myRouter
   .route("/bus")
   // Retourne tous les numeros de bus passant a l'arret mis en parametre
-  .get(function (req, res) {
+  .get(function(req, res) {
     let stopNumber = req.query.stop;
     let busTab = [];
     let getAllBusFromStop =
@@ -72,7 +74,7 @@ myRouter
       "'";
     console.log(getAllBusFromStop);
 
-    con.query(getAllBusFromStop, function (err, result) {
+    con.query(getAllBusFromStop, function(err, result) {
       if (err) {
         console.log(err);
       }
@@ -93,7 +95,7 @@ myRouter
 myRouter
   .route("/informations")
   // Retourne toutes les informations necessaire sur le numero du bus passe en parametre
-  .get(function (req, res) {
+  .get(function(req, res) {
     // TODO Ameliorer la vitesse de calcul en prenant que les bus passant dans max 2H
     let busNumber = req.query.bus;
     var date = new Date();
@@ -114,7 +116,7 @@ myRouter
       "'";
     console.log(getInformationsFromBus);
 
-    con.query(getInformationsFromBus, function (err, result) {
+    con.query(getInformationsFromBus, function(err, result) {
       if (err) {
         console.log(err);
       }
@@ -132,9 +134,10 @@ myRouter
 myRouter
   .route("/stops")
   // Retourne tous les arrets de bus
-  .get(function (req, res) {
-    let getAllStops = "SELECT stop_id, stop_name, stop_lat, stop_lon FROM stops";
-    con.query(getAllStops, function (err, result) {
+  .get(function(req, res) {
+    let getAllStops =
+      "SELECT stop_id, stop_name, stop_lat, stop_lon FROM stops";
+    con.query(getAllStops, function(err, result) {
       if (err) {
         console.log(err);
       }
@@ -152,11 +155,14 @@ myRouter
 myRouter
   .route("/stop")
   // Retourne tous les arrets de bus
-  .get(function (req, res) {
+  .get(function(req, res) {
     let stopId = req.query.id;
 
-    let getStop = "SELECT stop_id, stop_name, stop_lat, stop_lon FROM stops WHERE stop_id like '" + stopId + "'";
-    con.query(getStop, function (err, result) {
+    let getStop =
+      "SELECT stop_id, stop_name, stop_lat, stop_lon FROM stops WHERE stop_id like '" +
+      stopId +
+      "'";
+    con.query(getStop, function(err, result) {
       if (err) {
         console.log(err);
       }
@@ -173,7 +179,7 @@ myRouter
 myRouter
   .route("/nearestBusStop")
   // Retourne l'arret le plus proche ainsi que sa distance en fonction de la position du marker (long, lat), et du stopId (arret de bus ou l'utilisateur attend)
-  .get(function (req, res) {
+  .get(function(req, res) {
     // Marker position
     let long = req.query.long;
     let lat = req.query.lat;
@@ -188,6 +194,17 @@ myRouter
     let hour =
       (date.getHours() < 10 ? "0" : "") +
       date.getHours() +
+      ":" +
+      (date.getMinutes() < 10 ? "0" : "") +
+      date.getMinutes() +
+      ":" +
+      (date.getSeconds() < 10 ? "0" : "") +
+      date.getSeconds();
+
+    let hour2 =
+      (date.getHours() + 2 < 10 ? "0" : "") +
+      date.getHours() +
+      2 +
       ":" +
       (date.getMinutes() < 10 ? "0" : "") +
       date.getMinutes() +
@@ -226,6 +243,8 @@ myRouter
             element.route_short_name +
             "' AND departure_time > '" +
             hour +
+            "' AND departure_time < '" +
+            hour2 +
             "' AND direction_id LIKE '" +
             directionFirstStop +
             "'";
@@ -242,7 +261,6 @@ myRouter
 
               console.log("premiere stop : ");
               console.log(nearestStop);
-
 
               result.forEach(stop => {
                 let stopDistance = getDistanceFromLongLat(
@@ -282,73 +300,80 @@ myRouter
   });
 
 function getInfoFromSecondStop(nearestStop, res, distance, req) {
-  var date = new Date();
-  let hour =
-    (date.getHours() < 10 ? "0" : "") +
-    date.getHours() +
-    ":" +
-    (date.getMinutes() < 10 ? "0" : "") +
-    date.getMinutes() +
-    ":" +
-    (date.getSeconds() < 10 ? "0" : "") +
-    date.getSeconds();
+  if (nearestStop.length > 0) {
+    var date = new Date();
+    let hour =
+      (date.getHours() < 10 ? "0" : "") +
+      date.getHours() +
+      ":" +
+      (date.getMinutes() < 10 ? "0" : "") +
+      date.getMinutes() +
+      ":" +
+      (date.getSeconds() < 10 ? "0" : "") +
+      date.getSeconds();
 
-  let query =
-    "SELECT * FROM allData WHERE idStop LIKE '" +
-    firstStopNumber +
-    "' AND departure_time > '" +
-    hour +
-    "' AND route_short_name LIKE '" +
-    nearestStop.route_short_name +
-    "' order by departure_time";
-  console.log(query);
+    let query =
+      "SELECT * FROM allData WHERE idStop LIKE '" +
+      firstStopNumber +
+      "' AND departure_time > '" +
+      hour +
+      "' AND route_short_name LIKE '" +
+      nearestStop.route_short_name +
+      "' order by departure_time";
+    console.log(query);
 
-  con.query(query, (err, result) => {
-    if (err) {
-      console.log(err);
-    }
-    // Requete reussite
-    else {
-      tripId = result[0].trip_id;
-      departureTime = result[0].departure_time;
-      console.log(">>>>>>>>>>>>>>>>>>-----");
-      console.log(tripId);
-      console.log(departureTime);
-      console.log(">>>>>>>>>>>>>>>>>>-----");
-      let query2 =
-        "SELECT departure_time FROM allData WHERE idStop LIKE '" +
-        nearestStop.idStop +
-        "' AND departure_time > '" +
-        hour +
-        "' AND trip_id LIKE '" +
-        tripId +
-        "'";
-      console.log(query2);
+    con.query(query, (err, result) => {
+      if (err) {
+        console.log(err);
+      }
+      // Requete reussite
+      else {
+        tripId = result[0].trip_id;
+        departureTime = result[0].departure_time;
+        console.log(">>>>>>>>>>>>>>>>>>-----");
+        console.log(tripId);
+        console.log(departureTime);
+        console.log(">>>>>>>>>>>>>>>>>>-----");
+        let query2 =
+          "SELECT departure_time FROM allData WHERE idStop LIKE '" +
+          nearestStop.idStop +
+          "' AND departure_time > '" +
+          hour +
+          "' AND trip_id LIKE '" +
+          tripId +
+          "'";
+        console.log(query2);
 
-      con.query(query2, (err, result) => {
-        if (err) {
-          console.log(err);
-        }
-        // Requete reussite
-        else {
-          console.log("aaaaaaaaaaaaaaaaaa");
-          console.log(result);
-          // console.log(result[0].departure_time);
-
-          if (result.length > 0) {
-            nearestStop.departure_time_first = result[0].departure_time;
+        con.query(query2, (err, result) => {
+          if (err) {
+            console.log(err);
           }
-          nearestStop.stop_name_first = stop_name_first;
-          console.log("aaaaaaaaaaaaaaaaaa");
-          res.json({
-            result: nearestStop,
-            distance: distance,
-            methode: req.method
-          });
-        }
-      });
-    }
-  });
+          // Requete reussite
+          else {
+            console.log("aaaaaaaaaaaaaaaaaa");
+            console.log(result);
+            // console.log(result[0].departure_time);
+
+            if (result.length > 0) {
+              nearestStop.departure_time_first = result[0].departure_time;
+            }
+            nearestStop.stop_name_first = stop_name_first;
+            res.json({
+              result: nearestStop,
+              distance: distance,
+              methode: req.method
+            });
+          }
+        });
+      }
+    });
+  } else {
+    res.json({
+      result: {},
+      distance: distance,
+      methode: req.method
+    });
+  }
 
   //     tripId;
   // var departureTime;
@@ -374,9 +399,9 @@ function getInfoFromSecondStop(nearestStop, res, distance, req) {
 myRouter
   .route("/tripsId")
   // Retourne tous les tripsId (trip == bus physique) par rapport au numero du bus passe en parametre
-  .get(function (req, res) { });
+  .get(function(req, res) {});
 
-myRouter.route("/result").get(function (req, res) {
+myRouter.route("/result").get(function(req, res) {
   var date = new Date();
   let hour =
     (date.getHours() < 10 ? "0" : "") +
@@ -445,7 +470,7 @@ function getFinalResult() {
     "'";
   console.log(getTripsIdFromBus);
 
-  con.query(getTripsIdFromBus, function (err, result) {
+  con.query(getTripsIdFromBus, function(err, result) {
     if (err) {
       console.log(err);
     }
@@ -480,7 +505,7 @@ function getFinalResult() {
 
       console.log(query);
 
-      con.query(query, function (err, result) {
+      con.query(query, function(err, result) {
         if (err) {
           console.log(err);
         }
@@ -538,7 +563,7 @@ function goodDirectionOfTrip(trip, res) {
     trip +
     "' ORDER BY `arrival_time` ASC";
   // if(firstStopNumber avant nearestStop )
-  con.query(query, function (err, result) {
+  con.query(query, function(err, result) {
     let direction_id;
     if (err) {
       console.log(err);
@@ -642,6 +667,6 @@ function getDistanceFromLongLat(lon1, lat1, lon2, lat2, unit) {
 app.use(myRouter);
 
 // Démarrer le serveur
-app.listen(port, hostname, function () {
+app.listen(port, hostname, function() {
   console.log("Mon serveur fonctionne sur http://" + hostname + ":" + port);
 });
