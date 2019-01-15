@@ -1,21 +1,21 @@
 var express = require("express");
 var mysql = require("mysql");
 
-var con = mysql.createConnection({
-  host: "82.253.136.83",
-  user: "root",
-  password: "geoffrey",
-  database: "nfcbus"
-});
-
 // var con = mysql.createConnection({
-//   host: "localhost",
+//   host: "82.253.136.83",
 //   user: "root",
-//   port: "8888" /* port on which phpmyadmin run */,
-//   password: "root",
-//   database: "nfcbus",
-//   socketPath: "/Applications/MAMP/tmp/mysql/mysql.sock" //for mac and linux
+//   password: "geoffrey",
+//   database: "nfcbus"
 // });
+
+var con = mysql.createConnection({
+  host: "localhost",
+  user: "root",
+  port: "8888" /* port on which phpmyadmin run */,
+  password: "root",
+  database: "nfcbus",
+  socketPath: "/Applications/MAMP/tmp/mysql/mysql.sock" //for mac and linux
+});
 
 con.connect(function(err) {
   if (err) {
@@ -61,6 +61,7 @@ var tripId;
 var departureTime;
 var arrivalTime;
 var stop_name_first;
+var distance;
 
 myRouter
   .route("/bus")
@@ -175,12 +176,8 @@ myRouter
       }
     });
   });
-
-myRouter
-  .route("/nearestBusStop")
-  // Retourne l'arret le plus proche ainsi que sa distance en fonction de la position du marker (long, lat), et du stopId (arret de bus ou l'utilisateur attend)
-  .get(function(req, res) {
-    // Marker position
+var getAsycnResult = (req, res) =>
+  new Promise((resolve, reject) => {
     let long = req.query.long;
     let lat = req.query.lat;
     // On recupère les bus
@@ -189,7 +186,6 @@ myRouter
     var tourDeBoucle = 0;
 
     if (long && lat && firstStopNumber) {
-      var distance = Number.MAX_SAFE_INTEGER;
       let busTab = [];
       var date = new Date();
       let hour =
@@ -204,10 +200,10 @@ myRouter
 
       let hour2 =
         (date.getHours() + 2 < 10 ? "0" : "") +
-        (parseInt(date.getHours()) + 2) +
+        date.getHours() +
         ":" +
-        (date.getMinutes() < 10 ? "0" : "") +
-        date.getMinutes() +
+        (parseInt(date.getMinutes()) + 30 < 10 ? "0" : "") +
+        (parseInt(date.getMinutes()) + 30) +
         ":" +
         (date.getSeconds() < 10 ? "0" : "") +
         date.getSeconds();
@@ -231,12 +227,8 @@ myRouter
           bus = [];
           directionFirstStop = result[0].direction_id;
           stop_name_first = result[0].stop_name;
-          console.log("----------------------");
-
-          console.log(result.length);
-          console.log("----------------------");
-
-          result.forEach(element => {
+          var itemsProcessed = 0;
+          result.forEach((element, index, array) => {
             busTab.push(element.route_short_name);
             // console.log("ELEMENT = " + element.trip_id);
             // tripId.push(element.trip_id);
@@ -250,7 +242,9 @@ myRouter
               "' AND direction_id LIKE '" +
               directionFirstStop +
               "'";
-            con.query(getAllStops, (err, result) => {
+            console.log(getAllStops);
+
+            con.query(getAllStops, (err, result2) => {
               if (err) {
                 console.log(err);
               }
@@ -258,13 +252,17 @@ myRouter
               else {
                 // console.log("Fin du calcul pour : " + getAllStops);
                 // console.log("RESULTA TAILE ------->> " + result.length);
-                console.log(result);
-                nearestStop = result[0];
+                // console.log(result2);
+                // nearestStop = result2[0];
 
-                console.log("premiere stop : ");
-                console.log(nearestStop);
+                // console.log("premiere stop : ");
+                // console.log(nearestStop);
+                console.log("len :");
 
-                result.forEach(stop => {
+                console.log(result2.length);
+                itemsProcessed++;
+                var itemsProcessed2 = 0;
+                result2.forEach((stop, index2, array2) => {
                   let stopDistance = getDistanceFromLongLat(
                     long,
                     lat,
@@ -279,31 +277,81 @@ myRouter
                     nearestStop = stop;
                   }
                   // console.log("DANS la BOUCLE");
+                  itemsProcessed2++;
+                  console.log(itemsProcessed2);
+                  console.log(array2.length);
+                  console.log("!!!!!!!!!!!!!!!");
+                  console.log(itemsProcessed);
+                  console.log(array.length);
+
+                  if (
+                    itemsProcessed === array.length - 1 &&
+                    itemsProcessed2 === array2.length
+                  ) {
+                    console.log("RESOLVE");
+
+                    jsonRes = {};
+                    jsonRes["nearestStop"] = nearestStop;
+                    jsonRes["res"] = res;
+                    jsonRes["distance"] = distance;
+                    jsonRes["req"] = req;
+                    resolve(jsonRes);
+                  }
                 });
                 tourDeBoucle++;
-                // console.log("FIN de BOUCLE");
+                console.log("FIN de BOUCLE");
               }
             });
           });
 
-          console.log(distance);
-          console.log("nearestStop : ");
+          // console.log(distance);
+          // console.log("nearestStop : ");
 
-          console.log(nearestStop);
+          // console.log(nearestStop);
         }
       });
     }
-    setTimeout(() => {
-      console.log("Nombre d'arret teste : " + arretTeste);
-      console.log("Nombre de tour : " + tourDeBoucle);
-      // getFinalResult();
-      console.log(bus);
-      getInfoFromSecondStop(nearestStop, res, distance, req);
-    }, 5000);
+  });
+
+myRouter
+  .route("/nearestBusStop")
+  // Retourne l'arret le plus proche ainsi que sa distance en fonction de la position du marker (long, lat), et du stopId (arret de bus ou l'utilisateur attend)
+  .get(async (req, res) => {
+    // Marker position
+    distance = Number.MAX_SAFE_INTEGER;
+
+    await getAsycnResult(req, res)
+      .then(result => {
+        console.log("res then : ");
+        // console.log(result);
+        getInfoFromSecondStop(
+          result["nearestStop"],
+          result["res"],
+          result["distance"],
+          result["req"]
+        );
+      })
+      .catch(err => {
+        console.log(err);
+      });
+
+    // setTimeout(() => {
+    //   console.log("Nombre d'arret teste : " + arretTeste);
+    //   console.log("Nombre de tour : " + tourDeBoucle);
+    //   // getFinalResult();
+    //   console.log(bus);
+    //   // getInfoFromSecondStop(nearestStop, res, distance, req);
+    // }, 5000);
   });
 
 function getInfoFromSecondStop(nearestStop, res, distance, req) {
-  if (nearestStop && nearestStop.length > 0) {
+  console.log("->>>>>>>>>>>>>>>>>>>");
+  console.log("Inside getInfoFromSecondStop");
+  console.log(nearestStop);
+
+  if (typeof nearestStop != "undefined") {
+    console.log("<<<<<<<<<<<<<<<<<<<< dans le if");
+
     var date = new Date();
     let hour =
       (date.getHours() < 10 ? "0" : "") +
@@ -353,7 +401,6 @@ function getInfoFromSecondStop(nearestStop, res, distance, req) {
           }
           // Requete reussite
           else {
-            console.log("aaaaaaaaaaaaaaaaaa");
             console.log(result);
             // console.log(result[0].departure_time);
 
