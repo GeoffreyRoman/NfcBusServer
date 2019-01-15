@@ -198,15 +198,19 @@ var getAsycnResult = (req, res) =>
         (date.getSeconds() < 10 ? "0" : "") +
         date.getSeconds();
 
+      var date2 = new Date();
+
+      date2.setTime(date2.getTime() + 0.1 * 60 * 60 * 1000);
+
       let hour2 =
-        (date.getHours() + 2 < 10 ? "0" : "") +
-        date.getHours() +
+        (date2.getHours() < 10 ? "0" : "") +
+        date2.getHours() +
         ":" +
-        (parseInt(date.getMinutes()) + 30 < 10 ? "0" : "") +
-        (parseInt(date.getMinutes()) + 30) +
+        (date2.getMinutes() < 10 ? "0" : "") +
+        date2.getMinutes() +
         ":" +
-        (date.getSeconds() < 10 ? "0" : "") +
-        date.getSeconds();
+        (date2.getSeconds() < 10 ? "0" : "") +
+        date2.getSeconds();
 
       console.log("heure : ");
       console.log(hour2);
